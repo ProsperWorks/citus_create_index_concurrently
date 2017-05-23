@@ -28,7 +28,7 @@
 #
 #   $ ./citus_create_index_concurrently.sh --pg postgres://localhost:9750/crm_dev --table foo --index index_bar --columns column_a
 #
-#   $ ./citus_create_index_concurrently.sh --pg `heroku config:get DATABASE_URL --app ali-staging` --table gmail_msgid_mappings --index unique_on_user_msgid_hashid --columns company_id,company_user_id,gmail_msgid,correspondence_hash_id --unique --if-not-exists --num-jobs 4
+#   $ ./citus_create_index_concurrently.sh --pg `cat CITUS_COORDINATOR_PG_URL` --table gmail_msgid_mappings --index unique_on_user_msgid_hashid --columns company_id,company_user_id,gmail_msgid,correspondence_hash_id --unique --if-not-exists --num-jobs 4
 #
 # WARNING: THIS WILL NOT WORK VIA PGBOUNCER!!!
 #
