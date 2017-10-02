@@ -77,6 +77,7 @@ function fail()
 # Parse args:
 #
 NUM_JOBS="1"
+WHERE_CLAUSE=""
 while [[ $# -gt 0 ]]
 do
     param="$1"
@@ -100,6 +101,16 @@ do
             ;;
         --unique)
             UNIQUE="UNIQUE"
+            ;;
+        --where)
+            if [ "" == "$WHERE_CLAUSE" ]
+            then
+                WHERE_CLAUSE="WHERE ($1)"
+                shift # past argument
+            else
+                echo "only one --where supported"
+                exit 1
+            fi
             ;;
         --if-not-exists)
             IF_NOT_EXISTS="IF NOT EXISTS"
@@ -160,6 +171,8 @@ echo "INDEX:         $INDEX"
 echo "DROP:          $DROP"
 echo "NUM_JOBS:      $NUM_JOBS"
 
+echo "WHERE_CLAUSE:  $WHERE_CLAUSE"
+
 function for_each_shard()
 {
     psql $PG -tA -F" " -c "SELECT s.shardid,nodename,nodeport FROM pg_dist_shard s JOIN pg_dist_shard_placement p ON (s.shardid = p.shardid) WHERE logicalrelid::regclass = '${TABLE}'::regclass" | xargs -n 3 -P "${NUM_JOBS}" sh -c "$*"
@@ -176,7 +189,7 @@ else
     echo "UNIQUE:        $UNIQUE"
     echo "IF_NOT_EXISTS: $IF_NOT_EXISTS"
     set -e
-    for_each_shard "psql ${PRE_HOST}\$1:\$2${PG_PATH} -c \"CREATE ${UNIQUE} INDEX CONCURRENTLY ${IF_NOT_EXISTS} ${INDEX}_\$0 ON ${TABLE}_\$0 (${COLUMNS})\""
-    env PGSSLMODE=require PGOPTIONS="-c citus.enable_ddl_propagation=off" psql $PG -c "CREATE $UNIQUE INDEX CONCURRENTLY $IF_NOT_EXISTS $INDEX ON $TABLE (${COLUMNS})"
+    for_each_shard "psql ${PRE_HOST}\$1:\$2${PG_PATH} -c \"CREATE ${UNIQUE} INDEX CONCURRENTLY ${IF_NOT_EXISTS} ${INDEX}_\$0 ON ${TABLE}_\$0 (${COLUMNS}) ${WHERE_CLAUSE}\""
+    env PGSSLMODE=require PGOPTIONS="-c citus.enable_ddl_propagation=off" psql $PG -c "CREATE $UNIQUE INDEX CONCURRENTLY $IF_NOT_EXISTS $INDEX ON $TABLE (${COLUMNS}) ${WHERE_CLAUSE}"
     psql $PG -c "\d $TABLE" -c "\di $INDEX"
 fi
