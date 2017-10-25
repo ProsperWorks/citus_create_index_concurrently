@@ -183,7 +183,6 @@ then
     set -e
     env PGSSLMODE=require PGOPTIONS="-c citus.enable_ddl_propagation=off" psql $PG -c "DROP INDEX CONCURRENTLY IF EXISTS $INDEX"
     for_each_shard "psql ${PRE_HOST}\$1:\$2${PG_PATH} -c \"DROP INDEX CONCURRENTLY IF EXISTS ${INDEX}_\$0\""
-    psql $PG -c "\d $TABLE"
 else
     echo "COLUMNS:       $COLUMNS"
     echo "UNIQUE:        $UNIQUE"
@@ -191,5 +190,4 @@ else
     set -e
     for_each_shard "psql ${PRE_HOST}\$1:\$2${PG_PATH} -c \"CREATE ${UNIQUE} INDEX CONCURRENTLY ${IF_NOT_EXISTS} ${INDEX}_\$0 ON ${TABLE}_\$0 (${COLUMNS}) ${WHERE_CLAUSE}\""
     env PGSSLMODE=require PGOPTIONS="-c citus.enable_ddl_propagation=off" psql $PG -c "CREATE $UNIQUE INDEX CONCURRENTLY $IF_NOT_EXISTS $INDEX ON $TABLE (${COLUMNS}) ${WHERE_CLAUSE}"
-    psql $PG -c "\d $TABLE" -c "\di $INDEX"
 fi
